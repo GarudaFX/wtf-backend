@@ -271,4 +271,16 @@ class PaymentController extends Controller
             'payments' => $studentPayment,
         ]);
     }
+
+    public function getTotalPaymentOfStudent(string $student_id)
+    {
+        $total_payment = Payment::where('student_id', $student_id)->sum(
+            'amount'
+        );
+
+        return response()->json([
+            'message' => 'Total payment retrieve of student',
+            'total_payment' => $total_payment,
+        ]);
+    }
 }

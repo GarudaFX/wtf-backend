@@ -264,11 +264,32 @@ class PaymentController extends Controller
     public function getStudentLogs(string $student_id)
     {
         $studentPayment = Payment::join(
-            'admins', 
-            'admins.student_id', 
+            'admins',
+            'admins.student_id',
             '=',
             'payments.admin_id'
-        )->where('payments.student_id', $student_id);
+        )
+            ->join(
+                'semesters',
+                'semesters.semester_id',
+                '=',
+                'payments.semester_id'
+            )
+            ->where('payments.student_id', $student_id)
+            ->select(
+                'payments.ar_no',
+                'payments.student_id',
+                'payments.amount',
+                'payments.acad_year',
+                'payments.created_at',
+                'payments.desc',
+                'semesters.semester_name',
+                'semesters.acad_year',
+                'admins.first_name',
+                'admins.last_name',
+                'admins.position'
+            )
+            ->get();
         
         return response()->json([
             'message' => 'Payment retrieved',

@@ -263,9 +263,13 @@ class PaymentController extends Controller
 
     public function getStudentLogs(string $student_id)
     {
-        $studentPayment = Payment::where('student_id', $student_id)
-            ->with(['collector'])
-            ->get();
+        $studentPayment = Payment::join(
+            'admins', 
+            'admins.student_id', 
+            '=',
+            'payments.admin_id'
+        )->where('payments.student_id', $student_id);
+        
         return response()->json([
             'message' => 'Payment retrieved',
             'payments' => $studentPayment,

@@ -13,6 +13,6 @@ class Admin extends Model
     protected $guarded = [];
 
     public $incrementing = false;
-
-    public $hidden = ['password'];
+   
+    public $hidden = ['password', 'email', 'created_at', 'updated_at'];
 }

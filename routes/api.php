@@ -34,7 +34,6 @@ Route::group(['prefix' => 'auth'], function () {
 });
 
 Route::controller(PaymentController::class)
-    ->middleware('admin')
     ->group(function () {
         //logs of the students about their payment
         Route::get('/student-logs/{student_id}', 'getStudentLogs');
@@ -73,12 +72,10 @@ Route::controller(PaymentController::class)
 //admin apis ===================================================================
 
 Route::controller(AdminController::class)
-    ->middleware('admin')
     ->group(function () {
         //get all the admins under a specific college
         Route::get('/get-admin/{college_id}', 'getAllAdminSpecificCollege');
-    })
-    ->middleware('admin');
+    });
 
 //program apis ===================================================================
 
@@ -90,7 +87,6 @@ Route::controller(ProgramController::class)->group(function () {
 //expenses apis ===================================================================
 
 Route::controller(ExpensesController::class)
-    ->middleware('admin')
     ->group(function () {
         //get all expenses of a specific college
         Route::get('/expenses/{college_id}', 'getAllExpensesInSpecificCollege');
@@ -101,7 +97,6 @@ Route::controller(ExpensesController::class)
 //receipt apis ===================================================================
 
 Route::controller(ReceiptController::class)
-    ->middleware('admin')
     ->group(function () {
         //get all receipts
         Route::get('/receipts', 'getReceipts');
@@ -112,7 +107,7 @@ Route::controller(ReceiptController::class)
 //permission apis ===================================================================
 
 Route::controller(PermissionController::class)
-    // ->middleware('admin')
+    /
     ->group(function () {
         //get all permissions
         Route::get('/permissions', 'getAllPermissionsOfAllAdmins');
@@ -123,14 +118,13 @@ Route::controller(PermissionController::class)
 
 //Logs apis ===================================================================
 Route::controller(LogsController::class)
-    ->middleware('admin')
     ->group(function () {
         //get all the logs
         Route::get('/logs', 'getLogs');
     });
 
 Route::controller(RequestController::class)
-    // ->middleware('admin')
+    /
     ->group(function () {
         //get all requests
         Route::get('/requests', 'getAllRequests');

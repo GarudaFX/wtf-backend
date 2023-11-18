@@ -1,7 +1,5 @@
 <?php
 
-require __DIR__ . '/../public/index.php';
-
 use Illuminate\Support\Facades\Route;
 
 //controllers

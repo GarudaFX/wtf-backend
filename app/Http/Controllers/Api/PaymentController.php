@@ -7,6 +7,10 @@ use Illuminate\Http\Request;
 
 use App\Models\Payment;
 use App\Models\Student;
+use App\Models\Receipt;
+use App\Models\Permission;
+use App\Models\Log;
+use Carbon\Carbon;
 
 class PaymentController extends Controller
 {
@@ -19,9 +23,24 @@ class PaymentController extends Controller
             'acad_year' => 'required',
         ]);
 
+        $admin_permission = Permission::findOrFail(
+            $request->header('admin_id')
+        );
+
+        if (
+            !$admin_permission->can_add ||
+            $admin_permission->can_add !== true
+        ) {
+            return response()->json([
+                'statusCode' => 400,
+                'status' => 'failed',
+                'message' => 'Admin not permitted to do such action',
+            ]);
+        }
+
         $student = Student::findOrFail($request->student_id);
 
-        if ($student->balance === 0.0) {
+        if ($student->balance == 0.0) {
             return response()->json([
                 'statusCode' => 400,
                 'status' => 'failed',
@@ -45,11 +64,21 @@ class PaymentController extends Controller
         $student->balance -= $deductibleAmount;
         $student->save();
 
+        $log = new Log();
+        $log->label =
+            'added a new payment record with the amount of ' . $payment->amount;
+        $log->method = 'POST';
+        $log->admin_id = $payment->admin_id;
+        $log->ar_no = $payment->ar_no;
+
+        $log->save();
+
         return response()->json([
             'message' => 'Payment added',
             'payment' => $payment,
         ]);
     }
+
     public function getTotalPayment(int $college_id)
     {
         $all_payment = Payment::join(
@@ -116,7 +145,13 @@ class PaymentController extends Controller
 
     public function getLastPaymentAr()
     {
-        $last_payment = Payment::select('ar_no')
+        $last_payment = Payment::join(
+            'students',
+            'students.student_id',
+            '=',
+            'payments.student_id'
+        )
+            ->select('payments.*', 'students.first_name', 'students.last_name')
             ->orderBy('ar_no', 'desc')
             ->first();
 
@@ -263,34 +298,10 @@ class PaymentController extends Controller
 
     public function getStudentLogs(string $student_id)
     {
-        $studentPayment = Payment::join(
-            'admins',
-            'admins.student_id',
-            '=',
-            'payments.admin_id'
-        )
-            ->join(
-                'semesters',
-                'semesters.semester_id',
-                '=',
-                'payments.semester_id'
-            )
-            ->where('payments.student_id', $student_id)
-            ->select(
-                'payments.ar_no',
-                'payments.student_id',
-                'payments.amount',
-                'payments.acad_year',
-                'payments.created_at',
-                'payments.desc',
-                'semesters.semester_name',
-                'semesters.acad_year',
-                'admins.first_name',
-                'admins.last_name',
-                'admins.position'
-            )
+        $studentPayment = Payment::where('student_id', $student_id)
+            ->with(['collector'])
             ->get();
-        
+
         return response()->json([
             'message' => 'Payment retrieved',
             'payments' => $studentPayment,
@@ -306,6 +317,66 @@ class PaymentController extends Controller
         return response()->json([
             'message' => 'Total payment retrieve of student',
             'total_payment' => $total_payment,
+        ]);
+    }
+
+    public function getTotalPaymentPerMonthInCurrentYear(int $college_id)
+    {
+        $total_payment = Payment::whereYear('payments.date', now()->year)
+            ->join(
+                'students',
+                'students.student_id',
+                '=',
+                'payments.student_id'
+            )
+            ->join(
+                'programs',
+                'programs.program_id',
+                '=',
+                'students.program_id'
+            )
+            ->join(
+                'colleges',
+                'colleges.college_id',
+                '=',
+                'programs.college_id'
+            )
+            ->where('colleges.college_id', $college_id)
+            ->selectRaw(
+                'sum(amount) as total_payment, EXTRACT(MONTH FROM payments.date) as payment_month'
+            )
+            ->groupByRaw('EXTRACT(MONTH FROM payments.date)')
+            ->get();
+
+        $monthly_data = [];
+        foreach ($total_payment as $payment) {
+            $monthName = Carbon::createFromFormat(
+                '!m',
+                $payment->payment_month
+            )->format('F');
+            $monthly_data[] = [
+                'month' => $monthName,
+                'total_payment' => $payment->total_payment,
+            ];
+        }
+
+        return response()->json([
+            'message' => 'Total payment per month in current year',
+            'monthly_data' => $monthly_data,
+        ]);
+    }
+
+    public function savePayment(string $ar_no)
+    {
+        $payment = Payment::where('ar_no', $ar_no)->firstOrFail();
+
+        $receipt = new Receipt();
+        $receipt->ar_no = $payment->ar_no;
+        $receipt->save();
+
+        return response()->json([
+            'message' => 'Receipt saved',
+            'receipt' => $receipt,
         ]);
     }
 }

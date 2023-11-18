@@ -9,7 +9,7 @@ class Payment extends Model
 {
     use HasFactory;
 
-    protected $primaryKey = 'arr_no';
+    protected $primaryKey = 'ar_no';
     protected $fillable = [
         'id',
         'ar_no',
@@ -40,8 +40,7 @@ class Payment extends Model
 
     public function collector()
     {
-        //change student_id to admin_id later
-        return $this->hasOne(Admin::class, 'student_id', 'student_id');
+        return $this->hasOne(Admin::class, 'admin_id', 'admin_id');
     }
 
     public function program()
@@ -54,5 +53,10 @@ class Payment extends Model
             'student_id',
             'program_id'
         );
+    }
+
+    public function requests()
+    {
+        return $this->hasMany(Request::class, 'admin_id', 'admin_id');
     }
 }

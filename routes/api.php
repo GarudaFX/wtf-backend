@@ -1,13 +1,19 @@
 <?php
 
-use Illuminate\Http\Request;
+require __DIR__ . '/../public/index.php';
+
 use Illuminate\Support\Facades\Route;
 
 //controllers
 use App\Http\Controllers\Api\AdminController;
+use App\Http\Controllers\Api\ExpensesController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\ProgramController;
-
+use App\Http\Controllers\Api\ReceiptController;
+use App\Http\Controllers\Api\LogsController;
+use App\Http\Controllers\Api\RequestController;
+use App\Http\Controllers\Api\AuthController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -19,77 +25,122 @@ use App\Http\Controllers\Api\ProgramController;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+Route::group(['prefix' => 'auth'], function () {
+    Route::post('login', [AuthController::class, 'login']);
+    Route::post('register', [AuthController::class, 'register']);
+
+    Route::group(['middleware' => 'auth:sanctum'], function () {
+        Route::get('logout', [AuthController::class, 'logout']);
+        Route::get('user', [AuthController::class, 'user']);
+    });
 });
 
-//logs of the students about their payment
-Route::get('/student-logs/{student_id}', [
-    PaymentController::class,
-    'getStudentLogs',
-]);
+Route::controller(PaymentController::class)
+    ->middleware('admin')
+    ->group(function () {
+        //logs of the students about their payment
+        Route::get('/student-logs/{student_id}', 'getStudentLogs');
+        //get all the list of payments of college fee of a specific college
+        Route::get('/get-all-payment/{college_id}', 'getAllPaymentOfCollege');
+        // search a specific student
+        Route::get('/search-student/{student_id}', 'searchStudent');
+        //add new payment of college fee
+        Route::post('/add-payment', 'addPayment');
+        //get the total collection of college fee of a specific college
+        Route::get('/get-total-payment/{college_id}', 'getTotalPayment');
+        //get all payment
+        Route::get('/get-all-payment', 'getAllPayment');
+        //this is for scanning the qr code of the student, to get the student id
+        Route::get('/get-student-payment/{id}', 'getStudentBalance');
+        //get the latest payment
+        Route::get('/latest-payment', 'getLastPaymentAr');
+        //get the last 7 days of collection of a specific college with percentange
+        Route::get('/last-7-days/{id}', 'getPercentageOfLast7daysCollection');
+        //get the last 30 days of collection of a specific college with percentange
+        Route::get('/last-30-days/{id}', 'getPercentageOfLast30daysCollection');
+        //get the total amount of already paid of a specific student
+        Route::get(
+            '/get-total-student-payment/{id}',
+            'getTotalPaymentOfStudent'
+        );
+        //get the total amount collected per month in a specific college
+        Route::get(
+            '/get-total-payment-per-month/{id}',
+            'getTotalPaymentPerMonthInCurrentYear'
+        );
+        //save the receipt of the student
+        Route::post('/save-receipt/{ar_no}', 'savePayment');
+    });
 
-//====================================================
+//admin apis ===================================================================
 
-//search a specific student
-Route::get('/search-student/{student_id}', [
-    PaymentController::class,
-    'searchStudent',
-]);
+Route::controller(AdminController::class)
+    ->middleware('admin')
+    ->group(function () {
+        //get all the admins under a specific college
+        Route::get('/get-admin/{college_id}', 'getAllAdminSpecificCollege');
+    })
+    ->middleware('admin');
 
-//get all the admins under a specific college
-Route::get('/get-admin/{college_id}', [
-    AdminController::class,
-    'getAllAdminSpecificCollege',
-]);
+//program apis ===================================================================
 
-//add new payment of college fee
-Route::post('/add-payment', [PaymentController::class, 'addPayment']);
+Route::controller(ProgramController::class)->group(function () {
+    //get the total number of student per program
+    Route::get('/get-count-programs', 'getCountOfPrograms');
+});
 
-//get the total collection of college fee of a specific college
-Route::get('/get-total-payment/{college_id}', [
-    PaymentController::class,
-    'getTotalPayment',
-]);
+//expenses apis ===================================================================
 
-//get all the list of payments of college fee of a specific college
-Route::get('/get-all-payment', [PaymentController::class, 'getAllPayment']);
+Route::controller(ExpensesController::class)
+    ->middleware('admin')
+    ->group(function () {
+        //get all expenses of a specific college
+        Route::get('/expenses/{college_id}', 'getAllExpensesInSpecificCollege');
+        //add new expenses
+        Route::post('/add-expenses/{college_id}', 'addNewExpenses');
+    });
 
-//this is for scanning the qr code of the student, to get the student id
-Route::get('/get-student-payment/{id}', [
-    PaymentController::class,
-    'getStudentBalance',
-]);
+//receipt apis ===================================================================
 
-//get the latest payment
-Route::get('/get-latest-payment', [
-    PaymentController::class,
-    'getLastPaymentAr',
-]);
+Route::controller(ReceiptController::class)
+    ->middleware('admin')
+    ->group(function () {
+        //get all receipts
+        Route::get('/receipts', 'getReceipts');
+        //get all information of receipt
+        Route::get('/receipt/{ar_no}', 'getFullDetailsOfReceipt');
+    });
 
-//get the last 7 days of collection of a specific college with percentange
-Route::get('/last-7-days/{id}', [
-    PaymentController::class,
-    'getPercentageOfLast7daysCollection',
-]);
+//permission apis ===================================================================
 
-//get the last 30 days of collection of a specific college with percentange
-Route::get('/last-30-days/{id}', [
-    PaymentController::class,
-    'getPercentageOfLast30daysCollection',
-]);
+Route::controller(PermissionController::class)
+    // ->middleware('admin')
+    ->group(function () {
+        //get all permissions
+        Route::get('/permissions', 'getAllPermissionsOfAllAdmins');
+        //update permission of an admin
+        Route::put('/can-update-permission/{admin_id}', 'canUpdatePermission');
+        Route::put('/can-delete-permission/{admin_id}', 'canDeletePermission');
+    });
 
-//get the total number of student per program of a specific college
-Route::get('/get-count-programs', [
-    ProgramController::class,
-    'getCountOfPrograms',
-]);
+//Logs apis ===================================================================
+Route::controller(LogsController::class)
+    ->middleware('admin')
+    ->group(function () {
+        //get all the logs
+        Route::get('/logs', 'getLogs');
+    });
 
-//get the total amount of already paid of a specific student
-Route::get('/get-total-student-payment/{id}', [
-    PaymentController::class,
-    'getTotalPaymentOfStudent',
-]);
-// Route::get(
-//     '/data-student' . [PaymentController::class, 'getPaymentByStudentId']
-// );
+Route::controller(RequestController::class)
+    // ->middleware('admin')
+    ->group(function () {
+        //get all requests
+        Route::get('/requests', 'getAllRequests');
+        //creating a new request
+        Route::post('/create-request', 'createRequest');
+        Route::get('/request/{id}', 'getSelectedRequest');
+        //grant request
+        Route::post('/grant-request/{id}', 'grantRequest');
+        //decline request
+        Route::post('/decline-request/{id}', 'declineRequest');
+    });

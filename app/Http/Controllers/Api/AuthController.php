@@ -34,12 +34,9 @@ class AuthController extends Controller
         ]);
 
         if ($student->save()) {
-            $token = $student->createToken('Personal Access Token');
-
             return response()->json(
                 [
                     'message' => 'Successfully created user!',
-                    'accessToken' => $token,
                 ],
                 201
             );

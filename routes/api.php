@@ -33,6 +33,18 @@ Route::group(['prefix' => 'auth'], function () {
     });
 });
 
+//For carlo ========================================================
+Route::get('/logs/{student_id}', [PaymentController::class, 'getStudentLogs']);
+Route::get('/college-fee/{college_id}', [
+    PaymentController::class,
+    'getTotalPayment',
+]);
+Route::get('/student/{student-id}', [
+    PaymentController::class,
+    'searchStudent',
+]);
+//
+
 Route::controller(PaymentController::class)
     ->middleware('admin')
     ->group(function () {

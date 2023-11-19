@@ -47,7 +47,7 @@ Route::get('/student/{student_id}', [
     'searchStudent',
 ]);
 //getting the total payment of the student
-Route::get('/total-payment/{student-id}', [
+Route::get('/student-payment/{student_id}', [
     PaymentController::class,
     'getTotalPaymentOfStudent',
 ]);

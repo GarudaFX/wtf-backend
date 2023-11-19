@@ -39,10 +39,11 @@ Route::get('/college-fee/{college_id}', [
     PaymentController::class,
     'getTotalPayment',
 ]);
-Route::get('/student/{student-id}', [
+Route::get('/student/{student_id}', [
     PaymentController::class,
     'searchStudent',
 ]);
+Route::post('/pay', [PaymentController::class, 'addPayment']);
 //
 
 Route::controller(PaymentController::class)

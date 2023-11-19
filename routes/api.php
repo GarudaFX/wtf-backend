@@ -34,15 +34,24 @@ Route::group(['prefix' => 'auth'], function () {
 });
 
 //For carlo ========================================================
+//get the payment logs of the student
 Route::get('/logs/{student_id}', [PaymentController::class, 'getStudentLogs']);
+//get the total collection of the college
 Route::get('/college-fee/{college_id}', [
     PaymentController::class,
     'getTotalPayment',
 ]);
+//getting the specific student
 Route::get('/student/{student_id}', [
     PaymentController::class,
     'searchStudent',
 ]);
+//getting the total payment of the student
+Route::get('/total-payment/{student-id}', [
+    PaymentController::class,
+    'getTotalPaymentOfStudent',
+]);
+//adding a new payment
 Route::post('/pay', [PaymentController::class, 'addPayment']);
 //
 

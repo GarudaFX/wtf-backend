@@ -23,21 +23,6 @@ class PaymentController extends Controller
             'acad_year' => 'required',
         ]);
 
-        $admin_permission = Permission::findOrFail(
-            $request->header('admin_id')
-        );
-
-        if (
-            !$admin_permission->can_add ||
-            $admin_permission->can_add !== true
-        ) {
-            return response()->json([
-                'statusCode' => 400,
-                'status' => 'failed',
-                'message' => 'Admin not permitted to do such action',
-            ]);
-        }
-
         $student = Student::findOrFail($request->student_id);
 
         if ($student->balance == 0.0) {
